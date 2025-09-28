@@ -1,0 +1,149 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
+#include "Graph.h"
+
+
+Graph *createGraph(const uint64_t n_nodes) {
+    Graph *graph = malloc(sizeof(Graph));
+    if (!graph) {
+        perror("Erro ao alocar Graph");
+        exit(EXIT_FAILURE);
+    }
+    graph->nodes = malloc(n_nodes * sizeof(Node*));
+    if (!graph->nodes) {
+        perror("Erro ao alocar nodes");
+        exit(EXIT_FAILURE);
+    }
+    graph->n_edges = 0;
+    graph->n_nodes = 0;
+    graph->active_nodes = malloc((n_nodes / 8) + 1);
+    memset(graph->active_nodes, 0, (n_nodes / 8) + 1);
+    return graph;
+}
+
+Node *createNode(const Graph *graph, const uint64_t ID, const uint64_t n_edges) {
+    Node* node = malloc(sizeof(Node));
+    node->ID = ID;
+    node->neighbors = malloc(n_edges * sizeof(Node*));
+    node->n_edges = 0;
+    node->n_neighbors = 0;
+    graph->nodes[ID] = node;
+    return node;
+}
+
+void connectNodes(Graph* graph, const Node *n1, const Node *n2) {
+    Edge *edge = malloc(sizeof(Edge));
+    edge->node1 = n1;
+    edge->node2 = n2;
+    graph->edges[graph->n_edges] = edge;
+    graph->n_edges++;
+
+}
+
+Graph *createGraphFromFilename(const char *filename) {
+
+    uint64_t id1 = 0;
+    uint64_t id2 = 0;
+
+    uint64_t *n_edges = calloc(MAX_NODES, sizeof(uint64_t));
+    uint64_t n_total_edges = 0;
+
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Erro ao abrir o arquivo");
+        exit(EXIT_FAILURE);
+    }
+    while (2 == fscanf(file, "%lu %lu", &id1, &id2)) {
+        n_edges[id1] += 1;
+        n_edges[id2] += 1;
+        n_total_edges += 1;
+    }
+
+    fclose(file);
+
+    uint64_t n_nodes = 0;
+    for (uint64_t i = 0; i < MAX_NODES; i++) {
+        if (n_edges[i] == 0) {
+            n_nodes = i;
+            break;
+        }
+    }
+
+    Graph *graph = createGraph(n_nodes);
+    graph->edges = malloc(sizeof (Edge*) * n_total_edges);
+    if (!graph->edges) {
+        perror("Erro ao alocar edges");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < n_nodes; i++) {
+        createNode(graph, i, n_edges[i]);
+        graph->nodes[i]->n_neighbors = n_edges[i];
+        graph->n_nodes++;
+    }
+
+    file = fopen(filename, "r");
+    if (!file) {
+        perror("Erro ao abrir o arquivo");
+        exit(EXIT_FAILURE);
+    }
+    while (2 == fscanf(file, "%lu %lu", &id1, &id2)) {
+        Node *n1 = graph->nodes[id1];
+        n1->neighbors[n1->n_edges++] = graph->nodes[id2];
+
+        Node *n2 = graph->nodes[id2];
+        n2->neighbors[n2->n_edges++] = graph->nodes[id1];
+        connectNodes(graph, n1, n2);
+    }
+
+    fclose(file);
+    free(n_edges);
+
+    return graph;
+
+}
+
+void setNodeState(char *activeNodesArray, uint64_t id, const int newState) {
+    uint64_t i = id / 8;
+    uint64_t j = id % 8;
+    char mask = 0b10000000 >> j ;
+
+    if (newState == 1) {
+        activeNodesArray[i] = activeNodesArray[i] | mask;
+    }
+    else {
+        activeNodesArray[i] = activeNodesArray[i] & ~mask;
+    }
+}
+
+bool getNodeState(const char* activeNodesArray, uint64_t id) {
+    uint64_t i = id / 8;
+    uint64_t j = id % 8;
+    const char mask = 0b10000000 >> j ;
+
+    return (activeNodesArray[i] & mask) != 0;
+}
+
+void activateFromFile(const Graph *graph, const char *filename) {
+    FILE *file = fopen(filename, "r");
+    uint64_t id;
+    while (1 == fscanf(file, "%lu", &id)) {
+        setNodeState(graph->active_nodes, id, 1);
+    }
+}
+
+void activateFromIDArray(const Graph *graph, const uint64_t *IDs, const uint64_t n_ids) {
+    for (int i = 0; i < n_ids; i++) {
+        setNodeState(graph->active_nodes, IDs[i], 1);
+    }
+}
+
+void deactivateAll(const Graph *graph) {
+   memset(graph->active_nodes, 0, (graph->n_nodes / 8) + 1);
+}
+
+
+
