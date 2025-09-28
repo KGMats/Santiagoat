@@ -6,6 +6,7 @@
 
 
 int propagate(const Graph *graph, int iteration);
+int partialPropagate(const Graph *graph, uint64_t n_changed, uint64_t *changed_nodes);
 bool runTest(Graph *graph, uint64_t *activeNodeIDS, uint64_t n_ids);
 void printBits(size_t size, void const * ptr);
 void mergeSort(tuple *arr, uint64_t left, uint64_t right);
