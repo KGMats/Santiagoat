@@ -30,6 +30,7 @@ Node *createNode(const Graph *graph, const uint64_t ID, const uint64_t n_edges) 
     node->neighbors = malloc(n_edges * sizeof(Node*));
     node->n_edges = 0;
     node->n_neighbors = 0;
+    node->n_active_neighbors = 0;
     graph->nodes[ID] = node;
     return node;
 }
@@ -40,7 +41,6 @@ void connectNodes(Graph* graph, const Node *n1, const Node *n2) {
     edge->node2 = n2;
     graph->edges[graph->n_edges] = edge;
     graph->n_edges++;
-
 }
 
 Graph *createGraphFromFilename(const char *filename) {
@@ -133,17 +133,72 @@ void activateFromFile(const Graph *graph, const char *filename) {
     while (1 == fscanf(file, "%lu", &id)) {
         setNodeState(graph->active_nodes, id, 1);
     }
+    fclose(file);
 }
 
 void activateFromIDArray(const Graph *graph, const uint64_t *IDs, const uint64_t n_ids) {
-    for (int i = 0; i < n_ids; i++) {
+    for (uint64_t i = 0; i < n_ids; i++) {
         setNodeState(graph->active_nodes, IDs[i], 1);
+        Node *node = graph->nodes[IDs[i]];
+        for (uint64_t j = 0; j < node->n_neighbors; j++) {
+            node->neighbors[j]->n_active_neighbors++;
+        }
     }
 }
 
 void deactivateAll(const Graph *graph) {
+    for (uint64_t i = 0; i < graph->n_nodes; i++) {
+        graph->nodes[i]->n_active_neighbors = 0;
+    }
    memset(graph->active_nodes, 0, (graph->n_nodes / 8) + 1);
 }
 
 
 
+void freeGraph(Graph *graph) {
+    if (!graph) return;
+
+    if (graph->nodes) {
+        for (uint64_t i = 0; i < graph->n_nodes; i++) {
+            if (graph->nodes[i]) {
+                if (graph->nodes[i]->neighbors)
+                    free(graph->nodes[i]->neighbors);
+                free(graph->nodes[i]);
+            }
+        }
+        free(graph->nodes);
+    }
+
+
+    if (graph->edges) {
+        for (uint64_t i = 0; i < graph->n_edges; i++) {
+            if (graph->edges[i])
+                free(graph->edges[i]);
+        }
+        free(graph->edges);
+    }
+
+
+    if (graph->active_nodes)
+        free(graph->active_nodes);
+
+    free(graph);
+}
+
+
+
+void saveSolution(Graph *graph, const char* filename) {
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        printf("Erro ao tentar abrir o arquivo %s", filename);
+        exit(EXIT_FAILURE);
+    }
+
+
+    for (uint64_t i = 0; i < graph->n_nodes; i++) {
+        Node* node = graph->nodes[i];
+        if (node->n_active_neighbors > node->n_neighbors) {
+            printf("%ld", node->n_active_neighbors);
+        }
+    }
+}
