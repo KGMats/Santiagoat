@@ -2,12 +2,21 @@
 #include <stdlib.h>
 
 #include "Solutions.h"
+
+#include <time.h>
+
 #include "Algorithms.h"
 
 // TODO: Implementar o partialPropagate() na heuristica01 para melhorar as escolhas dos nos iniciais, evitando
 // Escolher nos que ja seriam ativos por propagacao.
-tuple *orderedList(Graph *graph) {
-    tuple* list = malloc(sizeof(tuple) * graph->n_nodes);
+
+// TODO: Integrar a funcao de busca local com as heuristicas.
+
+
+
+// Função auxiliar que ordena os grafos pelo seu grau
+tuple *orderedList(const Graph *graph) {
+    tuple *list = malloc(sizeof(tuple) * graph->n_nodes);
     for (int i = 0; i < graph->n_nodes; i++) {
         list[i].ID = i;
         list[i].degree = graph->nodes[i]->n_neighbors;
@@ -18,7 +27,35 @@ tuple *orderedList(Graph *graph) {
     return list;
 }
 
-// Heuristica do numero de Arestas
+tuple *orderedSetList(const Graph *graph, const uint64_t *IDsList) {
+    const uint64_t n_nodes = graph->n_nodes;
+    uint64_t n_ids = 0;
+    tuple *list = calloc(n_nodes,sizeof(tuple));
+    for (uint64_t i = 0; IDsList[i] != UINT64_MAX; i++) {
+        list[i].ID = IDsList[i];
+        list[i].degree = graph->nodes[IDsList[i]]->n_neighbors;
+        n_ids++;
+    }
+
+    uint64_t id_search = 0;
+    for (uint64_t i = 0; i < n_nodes; i++) {
+        bool isInList = false;
+        for (uint64_t j = 0; j < n_ids; j++) if (i == IDsList[j]) isInList = true;
+
+        if (!isInList) {
+            list[id_search + n_ids].ID = i;
+            list[id_search + n_ids].degree = graph->nodes[i]->n_neighbors;
+            id_search++;
+        }
+    }
+
+    mergeSort(list, 0, n_ids - 1);
+    mergeSort(list, n_ids, n_nodes - 1);
+    return list;
+}
+
+
+// Heuristica do número de Arestas
 bool greedyHeuristics01(Graph *graph, uint64_t initialActiveNodes) {
     tuple *list = orderedList(graph);
 
@@ -33,65 +70,111 @@ bool greedyHeuristics01(Graph *graph, uint64_t initialActiveNodes) {
 
 }
 
-// Algoritmo da "Ponte"
+
+// Função de busca local utilizando a estratégia "tira dois, põe um"
+bool hillClimbSimple(Graph* graph, uint64_t nActiveNodes) {
+    const int MAX_ITERATIONS = 1000;
+    srand(time(NULL));
+
+    uint64_t* toRemove = malloc(sizeof(uint64_t) * 2);
+    uint64_t melhorAtivos = nActiveNodes;
+    bool melhorou = true;
+
+    while (melhorou) {
+        melhorou = false;
+
+        for (int i = 0; i < MAX_ITERATIONS; ++i) {
+            // Escolhendo os nos para remover
+            int count = 0;
+            while (count < 2) {
+                uint64_t r = rand() % graph->n_nodes;
+                if (getNodeState(graph->active_nodes, r)) {
+                    toRemove[count++] = r;
+                }
+            }
+
+            // Escolhendo o nó para ativar
+            uint64_t toActivate;
+            do {
+                toActivate = rand() % graph->n_nodes;
+            } while (getNodeState(graph->active_nodes, toActivate));
+
+            // Fazendo as devidas modificações nos estados dos nós
+            setNodeState(graph->active_nodes, toRemove[0], false);
+            setNodeState(graph->active_nodes, toRemove[1], false);
+            setNodeState(graph->active_nodes, toActivate, true);
+
+            // Testando se é uma solução válida
+            bool sucesso = partialPropagate(graph, 1, &toActivate);
+
+            if (sucesso) {
+                melhorAtivos--;
+                melhorou = true;
+                printf("Nova melhor solução: %lu nós ativos\n", melhorAtivos);
+                break;
+            }
+
+
+            // Se não for, restaura os estados anteriores dos nós antes da próxima iteração
+            setNodeState(graph->active_nodes, toActivate, false);
+            setNodeState(graph->active_nodes, toRemove[0], true);
+            setNodeState(graph->active_nodes, toRemove[1], true);
+        }
+    }
+    return melhorou;
+}
+
+
+
+
+// Heuristica das pontes.
 bool greedyHeuristics02(Graph *graph, uint64_t initialActiveNodes) {
-    tuple *list = orderedList(graph);
     uint64_t *activeNodes = malloc(sizeof(uint64_t) * initialActiveNodes);
     uint64_t counter = 0;
 
     uint64_t *changedNodes = malloc(sizeof(uint64_t) * graph->n_nodes);
     uint64_t n_changed = 0;
 
-    // Encontrando os candidatos a nos de "ponte"
-    for (uint64_t i = 0; i < graph->n_nodes && counter < initialActiveNodes; i++) {
-        uint64_t nodeID = list[i].ID;
+    // Encontrando os candidatos a nos "Ponto de articulação"
+    uint64_t *tarjanSolutions = tarjan(graph);
+    tuple *list = orderedSetList(graph, tarjanSolutions);
+    uint64_t n_ids = 0;
+    for (uint64_t i = 0; tarjanSolutions[i] != UINT64_MAX; i++) n_ids++;
+
+    for (uint64_t i = n_ids - 1; i > 0 && counter < initialActiveNodes; i--) {
+        const uint64_t nodeID = list[i].ID;
 
         if (getNodeState(graph->active_nodes, nodeID)) continue;
 
         activeNodes[counter++] = nodeID;
-        changedNodes[0] = nodeID;
-        n_changed = 1;
-
-        while (n_changed > 0) {
-            n_changed = partialPropagate(graph, n_changed, changedNodes);
-        }
+        changedNodes[n_changed++] = nodeID;
     }
 
-    // Completa o restante dos nos caso o initiaActivenodes > n de nos selecionados.
+    // Completa o restante dos nos caso o initialActive nodes > n de nos selecionados.
     uint64_t i = graph->n_nodes;
-    while (i > 0 && counter < initialActiveNodes) {
+    while (i > n_ids && counter < initialActiveNodes) {
         i--;
-        uint64_t nodeID = list[i].ID;
+        const uint64_t nodeID = list[i].ID;
 
         if (getNodeState(graph->active_nodes, nodeID)) continue;
 
         activeNodes[counter++] = nodeID;
-        changedNodes[0] = nodeID;
-        n_changed = 1;
+        changedNodes[n_changed++] = nodeID;
 
-        while (n_changed > 0) {
-            n_changed = partialPropagate(graph, n_changed, changedNodes);
-        }
     }
 
-    // Contagem final de nós ativos
-    uint64_t totalActiveNodes = 0;
-    for (uint64_t i = 0; i < graph->n_nodes; i++) {
-        if (getNodeState(graph->active_nodes, i)) totalActiveNodes++;
-    }
-
-    free(activeNodes);
     free(changedNodes);
     free(list);
+    free(tarjanSolutions);
 
-    return totalActiveNodes == graph->n_nodes;
+    return runTest(graph, activeNodes, initialActiveNodes);
 }
-
 
 
 void testHeuristics(Graph* graph, bool heuristicFunction(Graph*, uint64_t)) {
     uint64_t low = 1;
-    uint64_t high = graph->n_nodes;
+    uint64_t n_nodes = graph->n_nodes;
+    uint64_t high = n_nodes;
     uint64_t best = 0;
 
     while (low <= high) {
@@ -108,7 +191,7 @@ void testHeuristics(Graph* graph, bool heuristicFunction(Graph*, uint64_t)) {
     }
 
     if (best != 0) {
-        printf("%lu/%lu Nos foram necessarios. Isso e %.5lf%% do total\n", best, graph->n_nodes, 100. * best / graph->n_nodes);
+        printf("%lu/%lu Nos foram necessarios. Isso e %.5lf%% do total\n", best, n_nodes, 100. * ((double) best / (double) n_nodes));
         return;
 
     }

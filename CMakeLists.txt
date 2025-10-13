@@ -9,4 +9,7 @@ add_executable(SemNome main.c
         Algorithms.c
         Algorithms.h
         Solutions.c
-        Solutions.h)
+        Solutions.h
+        Stack.h
+        Stack.c
+        LinkedList.h)

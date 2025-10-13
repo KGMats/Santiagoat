@@ -26,8 +26,13 @@ Graph *createGraph(const uint64_t n_nodes) {
 
 Node *createNode(const Graph *graph, const uint64_t ID, const uint64_t n_edges) {
     Node* node = malloc(sizeof(Node));
+    if (node == NULL)
+    {
+        perror("Falha ao alocar Node\n");
+        exit(EXIT_FAILURE);
+    }
     node->ID = ID;
-    node->neighbors = malloc(n_edges * sizeof(Node*));
+    node->neighbors = calloc(n_edges, sizeof(Node*));
     node->n_edges = 0;
     node->n_neighbors = 0;
     node->n_active_neighbors = 0;
@@ -106,6 +111,10 @@ Graph *createGraphFromFilename(const char *filename) {
 
 }
 
+
+
+// Função de set em um array de bits. Utilizando bits ao invez de um array de bools
+// economizamos por volta de 87% de memória.
 void setNodeState(char *activeNodesArray, uint64_t id, const int newState) {
     uint64_t i = id / 8;
     uint64_t j = id % 8;
@@ -119,6 +128,9 @@ void setNodeState(char *activeNodesArray, uint64_t id, const int newState) {
     }
 }
 
+
+
+// Função que retorna o valor de um bit em um array de bits.
 bool getNodeState(const char* activeNodesArray, uint64_t id) {
     uint64_t i = id / 8;
     uint64_t j = id % 8;
@@ -127,6 +139,9 @@ bool getNodeState(const char* activeNodesArray, uint64_t id) {
     return (activeNodesArray[i] & mask) != 0;
 }
 
+
+// Função que lê um arquivo em que cada linha é um numero e ativa
+// os nós cujos IDs são iguais as linhas do arquivo.
 void activateFromFile(const Graph *graph, const char *filename) {
     FILE *file = fopen(filename, "r");
     uint64_t id;
@@ -135,6 +150,8 @@ void activateFromFile(const Graph *graph, const char *filename) {
     }
     fclose(file);
 }
+
+
 
 void activateFromIDArray(const Graph *graph, const uint64_t *IDs, const uint64_t n_ids) {
     for (uint64_t i = 0; i < n_ids; i++) {
@@ -197,7 +214,7 @@ void saveSolution(Graph *graph, const char* filename) {
 
     for (uint64_t i = 0; i < graph->n_nodes; i++) {
         Node* node = graph->nodes[i];
-        if (node->n_active_neighbors > node->n_neighbors) {
+        if (getNodeState(graph->active_nodes, node->ID)) {
             printf("%ld", node->n_active_neighbors);
         }
     }
