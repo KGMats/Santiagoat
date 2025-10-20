@@ -13,6 +13,10 @@
 // é suficiente para ativar o nó que foi passado como argumento
 bool activationFunction(Node *node)
 {
+    if (node->n_active_neighbors == 0)
+    {
+        return false;
+    }
     return (node->n_neighbors / node->n_active_neighbors) <= 2;
 }
 

@@ -108,7 +108,7 @@ uint64_t hillClimbSimple(Graph* graph, uint64_t nActiveNodes)
             setNodeState(graph->active_nodes, toActivate, true);
 
             // Testando se é uma solução válida
-            bool sucesso = partialPropagate(graph, 1, &toActivate);
+            bool sucesso = partialPropagate(graph, 1, &toActivate) == graph->n_nodes;
 
             if (sucesso) {
                 melhorAtivos--;
