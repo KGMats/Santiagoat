@@ -1,8 +1,10 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "Solutions.h"
 
+#include <sys/types.h>
 #include <time.h>
 
 #include "Algorithms.h"
@@ -72,7 +74,8 @@ bool greedyHeuristics01(Graph *graph, uint64_t initialActiveNodes) {
 
 
 // Função de busca local utilizando a estratégia "tira dois, põe um"
-uint64_t hillClimbSimple(Graph* graph, uint64_t nActiveNodes) {
+uint64_t hillClimbSimple(Graph* graph, uint64_t nActiveNodes)
+{
     const int MAX_ITERATIONS = 1000;
     srand(time(NULL));
 
@@ -110,7 +113,6 @@ uint64_t hillClimbSimple(Graph* graph, uint64_t nActiveNodes) {
             if (sucesso) {
                 melhorAtivos--;
                 melhorou = true;
-                printf("Nova melhor solução: %lu nós ativos\n", melhorAtivos);
                 break;
             }
 
@@ -191,8 +193,7 @@ void testHeuristics(Graph* graph, bool heuristicFunction(Graph*, uint64_t)) {
     }
 
     if (best != 0) {
-        printf("%lu/%lu Nos foram necessarios. Isso e %.5lf%% do total\n", best, n_nodes, 100. * ((double) best / (double) n_nodes));
-        return;
+        printf("%lu/%lu Nos foram necessarios. Isso e %.5lf%% do total\n", best, n_nodes, 100. * ((double) best / (double) n_nodes)); return;
 
     }
 
@@ -203,7 +204,7 @@ void testHeuristics(Graph* graph, bool heuristicFunction(Graph*, uint64_t)) {
 // Função que utiliza de uma heuristica para encontrar uma solução e, em seguida
 // Utiliza uma função de busca local para tentar encontrar um vizinho melhor
 // Que a solução previamente calculada pela heuristica.
-void testLocalSearch(Graph *graph,  bool heuristicFunction(Graph*, uint64_t), bool localSearchFunction(Graph* graph, uint64_t nActiveNodes))
+void testLocalSearch(Graph *graph,  bool heuristicFunction(Graph*, uint64_t), uint64_t localSearchFunction(Graph* graph, uint64_t nActiveNodes))
 {
     // Tentando encontrar uma solução inicial com a heuristica
     uint64_t low = 1;
@@ -229,13 +230,17 @@ void testLocalSearch(Graph *graph,  bool heuristicFunction(Graph*, uint64_t), bo
         return;
     }
     
-    int bestLocal = localSearchFunction(graph, best);
+    uint64_t bestLocal = localSearchFunction(graph, best);
     if (best != bestLocal)
     {
-        printf("A busca local precisou de %d nos, contra %d da heuristica", bestLocal, best);
+        printf("--------------------------------------------------\n");
+        printf("Heuristica: %lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
+        printf("Busca Local: %lu Nos ativos (%0.2f%% do total)\n", bestLocal, 100 * (float) bestLocal / graph->n_nodes);
+        printf("Diferenca de %0.2f%% de redução\n", ((float) (best - bestLocal) / best) * 100);
+        printf("--------------------------------------------------\n");
         return;
     }
-    printf("A busca local não conseguiu melhorar o resultado da heuristica").
+    printf("A busca local não conseguiu melhorar o resultado da heuristica");
     return;
 
 }
