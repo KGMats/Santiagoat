@@ -72,7 +72,7 @@ bool greedyHeuristics01(Graph *graph, uint64_t initialActiveNodes) {
 
 
 // Função de busca local utilizando a estratégia "tira dois, põe um"
-bool hillClimbSimple(Graph* graph, uint64_t nActiveNodes) {
+uint64_t hillClimbSimple(Graph* graph, uint64_t nActiveNodes) {
     const int MAX_ITERATIONS = 1000;
     srand(time(NULL));
 
@@ -121,7 +121,7 @@ bool hillClimbSimple(Graph* graph, uint64_t nActiveNodes) {
             setNodeState(graph->active_nodes, toRemove[1], true);
         }
     }
-    return melhorou;
+    return melhorAtivos;
 }
 
 
@@ -197,5 +197,45 @@ void testHeuristics(Graph* graph, bool heuristicFunction(Graph*, uint64_t)) {
     }
 
     printf("Nao existe solucao\n");
+}
+
+
+// Função que utiliza de uma heuristica para encontrar uma solução e, em seguida
+// Utiliza uma função de busca local para tentar encontrar um vizinho melhor
+// Que a solução previamente calculada pela heuristica.
+void testLocalSearch(Graph *graph,  bool heuristicFunction(Graph*, uint64_t), bool localSearchFunction(Graph* graph, uint64_t nActiveNodes))
+{
+    // Tentando encontrar uma solução inicial com a heuristica
+    uint64_t low = 1;
+    uint64_t n_nodes = graph->n_nodes;
+    uint64_t high = n_nodes;
+    uint64_t best = 0;
+
+    while (low <= high) {
+        const uint64_t mid = (low + high) / 2;
+        deactivateAll(graph);
+
+        if (heuristicFunction(graph, mid)) {
+            best = mid;
+            high = mid - 1;
+        }
+        else {
+            low = mid + 1;
+        }
+    }
+
+    if (best == 0) {
+        printf("A heuristica não encontrou solução, portanto não há como fazer a busca local");
+        return;
+    }
+    
+    int bestLocal = localSearchFunction(graph, best);
+    if (best != bestLocal)
+    {
+        printf("A busca local precisou de %d nos, contra %d da heuristica", bestLocal, best);
+        return;
+    }
+    printf("A busca local não conseguiu melhorar o resultado da heuristica").
+    return;
 
 }

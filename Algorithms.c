@@ -110,7 +110,7 @@ void mergeSort(tuple *arr, uint64_t left, uint64_t right) {
 }
 
 
-// Função similar à propagate, mas ao invez de verificar por todo o grafo
+// Função similar a propagate, mas ao invez de verificar por todo o grafo
 // em busca do nós para ativar, ativa apenas os nós dados por changed_nodes
 // e iterativamente os nós que serão ativados por propagação destes.
 uint64_t partialPropagate(const Graph *graph, const uint64_t n_changed, const uint64_t *changed_nodes) {
@@ -207,6 +207,7 @@ uint64_t min(uint64_t a, uint64_t b) {
 uint64_t* tarjan(Graph* graph) {
     const uint64_t n_nodes = graph->n_nodes;
 
+    // TODO: usar bitsets no isAP e no visited ao invéz de arrays de bool.
     bool* visited = calloc(n_nodes, sizeof(bool));
     uint64_t* disc = malloc(n_nodes * sizeof(uint64_t));
     uint64_t* low = malloc(n_nodes * sizeof(uint64_t));
@@ -273,7 +274,7 @@ void dfs_AP(Node* start_node, bool visited[], uint64_t disc[], uint64_t low[], u
     StackPush(&stack, start_frame);
 
     while (stack != NULL) {
-        // Espia o topo da pilha sem remover
+        // Verifica o topo da pilha sem remover
         StackFrame* current_frame = stack->frame;
         Node* u = current_frame->u;
         uint64_t u_id = u->ID;
