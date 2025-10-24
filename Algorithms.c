@@ -1,17 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "Algorithms.h"
-
-#include <string.h>
 
 #include "Graph.h"
 #include "Solutions.h"
 #include "Stack.h"
+#include "Algorithms.h"
 
 
-// Funcao utilizada para verificar se o numero de vizinhos ativos
-// é suficiente para ativar o nó que foi passado como argumento
-bool activationFunction(Node *node)
+// Funcao utilizada para verificar se o número de vizinhos ativos
+// é suficiente para ativar o nó passado como argumento
+bool activationFunction(const Node *node)
 {
     if (node->n_active_neighbors == 0)
     {
@@ -22,14 +20,13 @@ bool activationFunction(Node *node)
 
 
 
-
 // Função que percorre o grafo e verifica quais nós satisfazem a função
 // de ativação. Itera até que não hajam mais nós que possam ser ativados.
 int propagate(const Graph* graph) {
     int changed = 0;
 
     for (int i = 0; i < graph->n_nodes; i++) {
-        Node* n1 = graph->nodes[i];
+        const Node* n1 = graph->nodes[i];
         if (getNodeState(graph->active_nodes, i)) {
             // Se o nó já está ativado, não precisamos verificar se ele precisa ser ativado.
             continue;
@@ -50,9 +47,10 @@ int propagate(const Graph* graph) {
 }
 
 
-// Funçao que verifica se um dado conjunto de nós (activeNodeIDs)
-// é capaz de ativar todo o grafo
-bool runTest(Graph* graph, uint64_t *activeNodeIDs, uint64_t n_ids) {
+
+// Função que verifica se um dado conjunto de nós (activeNodeIDs)
+// é capaz de ativar inteiramente o grafo
+bool runTest(const Graph* graph, const uint64_t *activeNodeIDs, const uint64_t n_ids) {
     int iteration = 0;
     activateFromIDArray(graph, activeNodeIDs, n_ids);
 
@@ -71,51 +69,9 @@ bool runTest(Graph* graph, uint64_t *activeNodeIDs, uint64_t n_ids) {
 }
 
 
-// Função auxiliar do merge sort
-void merge(tuple *arr, uint64_t left, uint64_t mid, uint64_t right) {
-    uint64_t n1 = mid - left + 1;
-    uint64_t n2 = right - mid;
 
-    tuple *L = malloc(n1 * sizeof(tuple));
-    tuple *R = malloc(n2 * sizeof(tuple));
-
-    for (uint64_t i = 0; i < n1; i++)
-        L[i] = arr[left + i];
-    for (uint64_t j = 0; j < n2; j++)
-        R[j] = arr[mid + 1 + j];
-
-    uint64_t i = 0, j = 0, k = left;
-
-    while (i < n1 && j < n2) {
-        if (L[i].degree <= R[j].degree)
-            arr[k++] = L[i++];
-        else
-            arr[k++] = R[j++];
-    }
-
-    while (i < n1)
-        arr[k++] = L[i++];
-    while (j < n2)
-        arr[k++] = R[j++];
-
-    free(L);
-    free(R);
-}
-
-void mergeSort(tuple *arr, uint64_t left, uint64_t right) {
-    if (left < right) {
-        uint64_t mid = left + (right - left) / 2;
-
-        mergeSort(arr, left, mid);
-        mergeSort(arr, mid + 1, right);
-
-        merge(arr, left, mid, right);
-    }
-}
-
-
-// Função similar a propagate, mas ao invez de verificar por todo o grafo
-// em busca do nós para ativar, ativa apenas os nós dados por changed_nodes
+// Função similar a propagate, mas ao invés de verificar o grafo inteiramente
+// em busca dos nós para ativar, ativa apenas os nós dados por changed_nodes
 // e iterativamente os nós que serão ativados por propagação destes.
 uint64_t partialPropagate(const Graph *graph, const uint64_t n_changed, const uint64_t *changed_nodes) {
     if (n_changed == 0) return 0;
@@ -159,7 +115,7 @@ uint64_t partialPropagate(const Graph *graph, const uint64_t n_changed, const ui
 }
 
 
-// Função similar ao partialPropagate, mas aqui ao invez de ativarmos os nós
+// Função similar ao partialPropagate, mas aqui ao invés de ativarmos os nós
 // dados por changed_nodes, desativamos eles e possivelmente os nós vizinhos
 // de forma iterativa.
 uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, const uint64_t *changed_nodes) {
@@ -186,7 +142,7 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
             if (!getNodeState(graph->active_nodes, neighbor->ID)) continue;
 
 
-            if (neighbor->n_active_neighbors < neighbor->n_neighbors / 2.0f) {
+            if (!activationFunction(neighbor)) {
                 setNodeState(graph->active_nodes, neighbor->ID, 0);
                 queue[back++] = neighbor->ID;
 
@@ -200,137 +156,75 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
 }
 
 
-uint64_t min(uint64_t a, uint64_t b) {
-    return (a < b) ? a : b;
-}
 
-
-
-// Algoritmo de tarjan para encontrar pontos de articulação em um grafo.
-// Utilizado pela greedyHeuristics02 (a heuristica das pontes).
-uint64_t* tarjan(Graph* graph) {
+void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uint64_t)) {
+    uint64_t low = 1;
     const uint64_t n_nodes = graph->n_nodes;
+    uint64_t high = n_nodes;
+    uint64_t best = 0;
 
-    // TODO: usar bitsets no isAP e no visited ao invéz de arrays de bool.
-    bool* visited = calloc(n_nodes, sizeof(bool));
-    uint64_t* disc = malloc(n_nodes * sizeof(uint64_t));
-    uint64_t* low = malloc(n_nodes * sizeof(uint64_t));
-    uint64_t* parent = malloc(n_nodes * sizeof(uint64_t));
-    bool* isAP = calloc(n_nodes, sizeof(bool));
-    uint64_t* solutions = malloc(n_nodes * sizeof(uint64_t));
-    uint64_t n_solutions = 0;
-    uint64_t time = 0;
+    while (low <= high) {
+        const uint64_t mid = (low + high) / 2;
+        deactivateAll(graph);
 
-    for (uint64_t i = 0; i < n_nodes; i++) {
-        parent[i] = UINT64_MAX;
-        solutions[i] = UINT64_MAX;
-    }
-
-    if (visited == NULL || disc == NULL || low == NULL || parent == NULL || isAP == NULL || solutions == NULL) {
-        printf("Deu erro aqui man\n");
-        exit(0);
-    }
-
-    for (uint64_t i = 0; i < n_nodes; i++) {
-        if (!visited[i]) {
-            Node* start_node = graph->nodes[i];
-
-            // Inicia o DFS iterativo
-            dfs_AP(start_node, visited, disc, low, parent, isAP, graph, &time);
-
-            // A REGRA DA RAIZ precisa ser verificada aqui, após o término do DFS
-            // para um componente. Contamos quantos filhos a raiz teve.
-            int root_children = 0;
-            for (uint64_t j = 0; j < n_nodes; j++) {
-                if (parent[j] == start_node->ID) {
-                    root_children++;
-                }
-            }
-            if (root_children > 1) {
-                isAP[start_node->ID] = true;
-            }
+        if (heuristicFunction(graph, mid)) {
+            best = mid;
+            high = mid - 1;
+        }
+        else {
+            low = mid + 1;
         }
     }
 
-    for (uint64_t i = 0; i < n_nodes; i++) {
-        if (isAP[i]) {
-            solutions[n_solutions++] = i;
-        }
+    if (best != 0) {
+        printf("%lu/%lu Nos foram necessarios. Isso e %.5lf%% do total\n", best, n_nodes, 100. * ((double) best / (double) n_nodes)); return;
+
     }
 
-    free(visited);
-    free(disc);
-    free(low);
-    free(parent);
-    free(isAP);
-    return solutions;
+    printf("Nao existe solucao\n");
 }
 
 
-// Função auxiliar de dfs utilizada pelo Algoritmo de Tarjan
-void dfs_AP(Node* start_node, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], Graph* graph, uint64_t* time) {
-    LinkedList* stack = NULL;
+// Função que utiliza de uma heuristica para encontrar uma solução e, em seguida
+// Utiliza uma função de busca local para tentar encontrar um vizinho melhor
+// Que a solução previamente calculada pela heuristica.
+void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, uint64_t), uint64_t localSearchFunction(const Graph* graph, uint64_t nActiveNodes)) {
+    // Tentando encontrar uma solução inicial com a heuristica
+    uint64_t low = 1;
+    const uint64_t n_nodes = graph->n_nodes;
+    uint64_t high = n_nodes;
+    uint64_t best = 0;
 
-    // Cria e empilha o primeiro estado para o nó inicial
-    StackFrame* start_frame = (StackFrame*)malloc(sizeof(StackFrame));
-    start_frame->u = start_node;
-    start_frame->neighbor_idx = 0;
-    StackPush(&stack, start_frame);
+    while (low <= high) {
+        const uint64_t mid = (low + high) / 2;
+        deactivateAll(graph);
 
-    while (stack != NULL) {
-        // Verifica o topo da pilha sem remover
-        StackFrame* current_frame = stack->frame;
-        Node* u = current_frame->u;
-        uint64_t u_id = u->ID;
-
-        // Se é a primeira vez que processamos este nó, fazemos as ações de "pré-ordem"
-        if (!visited[u_id]) {
-            visited[u_id] = true;
-            disc[u_id] = low[u_id] = ++(*time);
+        if (heuristicFunction(graph, mid)) {
+            best = mid;
+            high = mid - 1;
         }
-
-        // Verifica se ainda há vizinhos para explorar a partir de 'u'
-        if (current_frame->neighbor_idx < u->n_neighbors) {
-            Node* v = u->neighbors[current_frame->neighbor_idx];
-            uint64_t v_id = v->ID;
-
-            // Incrementa o índice para a próxima vez que voltarmos a este frame
-            current_frame->neighbor_idx++;
-
-            // Ignora o pai
-            if (v_id == parent[u_id]) {
-                continue;
-            }
-
-            if (visited[v_id]) {
-                // Se o vizinho já foi visitado, é um atalho (back-edge)
-                low[u_id] = min(low[u_id], disc[v_id]);
-            } else {
-                // Se não foi visitado, definimos o pai e empilhamos um novo estado para 'v'
-                parent[v_id] = u_id;
-
-                StackFrame* new_frame = (StackFrame*)malloc(sizeof(StackFrame));
-                new_frame->u = v;
-                new_frame->neighbor_idx = 0;
-                StackPush(&stack, new_frame);
-            }
-        } else {
-            // Se todos os vizinhos de 'u' já foram processados, simulamos a "volta" da recursão
-            uint64_t p_id = parent[u_id];
-
-            // Se 'u' não for a raiz de uma árvore DFS, ele atualiza o low-link de seu pai
-            if (p_id != UINT64_MAX) {
-                low[p_id] = min(low[p_id], low[u_id]);
-
-                // E o pai verifica se é um ponto de articulação por causa de 'u'
-                if (low[u_id] >= disc[p_id]) {
-                    isAP[p_id] = true;
-                }
-            }
-
-            // Remove o estado de 'u' da pilha e libera sua memória
-            StackFrame* done_frame = StackPop(&stack);
-            free(done_frame);
+        else {
+            low = mid + 1;
         }
     }
+
+    if (best == 0) {
+        printf("A heuristica não encontrou solução, portanto não há como fazer a busca local");
+        return;
+    }
+
+    const uint64_t bestLocal = localSearchFunction(graph, best);
+
+    if (best != bestLocal)
+    {
+        printf("--------------------------------------------------\n");
+        printf("Heuristica: %lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
+        printf("Busca Local: %lu Nos ativos (%0.2f%% do total)\n", bestLocal, 100 * (float) bestLocal / graph->n_nodes);
+        printf("Diferenca de %0.2f%% de redução\n", ((float) (best - bestLocal) / best) * 100);
+        printf("--------------------------------------------------\n");
+        return;
+    }
+
+    printf("A busca local não conseguiu melhorar o resultado da heuristica");
+
 }
