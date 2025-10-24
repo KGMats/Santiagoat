@@ -2,9 +2,9 @@
 // Created by Elon Pereira Neto on 24/10/25.
 //
 
-#include "../Utils.h"
-#include "../Algorithms.h"
-#include "../MaximumDegreeHeuristic.h"
+#include "Utils.h"
+#include "Algorithms.h"
+#include "MaximumDegreeHeuristic.h"
 
 // Heuristica do número de Arestas
 bool maximumDegreeHeuristic(const Graph *graph, const uint64_t initialActiveNodes) {

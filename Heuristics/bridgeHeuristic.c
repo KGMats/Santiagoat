@@ -4,10 +4,10 @@
 
 #include <stdlib.h>
 
-#include "../Utils.h"
-#include "../Algorithms.h"
-#include "../Tarjan.h"
-#include "../bridgeHeuristic.h"
+#include "Utils.h"
+#include "Algorithms.h"
+#include "Tarjan.h"
+#include "bridgeHeuristic.h"
 
 // Heuristica das pontes.
 bool greedyHeuristics02(Graph *graph, const uint64_t initialActiveNodes) {

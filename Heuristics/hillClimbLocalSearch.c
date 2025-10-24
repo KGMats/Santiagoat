@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../Utils.h"
-#include "../Algorithms.h"
-#include "../hillClimbLocalSearch.h"
+#include "Utils.h"
+#include "Algorithms.h"
+#include "hillClimbLocalSearch.h"
 
 
 

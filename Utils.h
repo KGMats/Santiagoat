@@ -6,7 +6,7 @@
 #define GRAFOS_UTILS_H
 
 #include <stdint.h>
-
+#include <stddef.h>
 #include "Graph.h"
 
 typedef struct {
