@@ -16,7 +16,7 @@ uint64_t min(const uint64_t a, const uint64_t b) {
 
 // Algoritmo de tarjan para encontrar pontos de articulação em um grafo.
 // Utilizado pela greedyHeuristics02 (a heuristica das pontes).
-uint64_t* tarjan(Graph* graph) {
+uint64_t* tarjan(const Graph* graph) {
     const uint64_t n_nodes = graph->n_nodes;
 
     // TODO: usar bitsets no isAP e no visited ao invés de arrays de bool.
@@ -75,7 +75,7 @@ uint64_t* tarjan(Graph* graph) {
 }
 
 // Função auxiliar de dfs utilizada pelo Algoritmo de Tarjan
-void dfs_AP(Node* startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], Graph* graph, uint64_t* time) {
+void dfs_AP(Node* startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], const Graph* graph, uint64_t* time) {
     LinkedList* stack = NULL;
 
     // Cria e empilha o primeiro estado para o nó inicial

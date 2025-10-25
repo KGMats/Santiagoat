@@ -6,8 +6,10 @@
 #include "Stack.h"
 #include "Algorithms.h"
 
-#include "Utils.h"
+#include <sys/types.h>
 
+#include "Utils.h"
+#include <sys/time.h>
 
 // Funcao utilizada para verificar se o número de vizinhos ativos
 // é suficiente para ativar o nó passado como argumento
@@ -17,7 +19,7 @@ bool activationFunction(const Node *node)
     {
         return false;
     }
-    return (node->n_neighbors / node->n_active_neighbors) <= 2;
+    return node->n_active_neighbors / node->n_neighbors >= 0.5;
 }
 
 
@@ -33,7 +35,6 @@ int propagate(const Graph* graph) {
             // Se o nó já está ativado, não precisamos verificar se ele precisa ser ativado.
             continue;
         }
-
 
         if (activationFunction(n1)) {
             setNodeState(graph->active_nodes, i, 1);
@@ -53,19 +54,11 @@ int propagate(const Graph* graph) {
 // Função que verifica se um dado conjunto de nós (activeNodeIDs)
 // é capaz de ativar inteiramente o grafo
 bool runTest(const Graph* graph, const uint64_t *activeNodeIDs, const uint64_t n_ids) {
-    int iteration = 0;
     activateFromIDArray(graph, activeNodeIDs, n_ids);
 
-    do {
-        iteration++;
-    } while (propagate(graph));
+    do {} while (propagate(graph));
 
-    uint64_t counter = 0;
-    for (uint64_t i = 0; i < graph->n_nodes; i++) {
-        if (getNodeState(graph->active_nodes, i)) {
-            counter++;
-        }
-    }
+    uint64_t counter = countActiveNodes(graph);
 
     return counter == graph->n_nodes;
 }
@@ -114,6 +107,7 @@ uint64_t partialPropagate(const Graph *graph, const uint64_t n_changed, const ui
     }
 
     free(queue);
+    free(inQueue);
     return new_count;
 }
 
@@ -161,17 +155,21 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
 
 
 
-void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uint64_t)) {
+void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uint64_t*, uint64_t)) {
     uint64_t low = 1;
     const uint64_t n_nodes = graph->n_nodes;
     uint64_t high = n_nodes;
     uint64_t best = 0;
+    uint64_t *bestSolution = malloc(sizeof(uint64_t) * n_nodes);
+
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
     while (low <= high) {
         const uint64_t mid = (low + high) / 2;
         deactivateAll(graph);
 
-        if (heuristicFunction(graph, mid)) {
+        if (heuristicFunction(graph, bestSolution, mid)) {
             best = mid;
             high = mid - 1;
         }
@@ -180,8 +178,28 @@ void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uin
         }
     }
 
+
+    nanosleep((const struct timespec[]){{120, 500000000L}}, NULL);
+
+    int64_t delta_ns = end.tv_nsec - start.tv_nsec;
+    int64_t delta_s = end.tv_sec - start.tv_sec;
+
+    if (delta_ns < 0) {
+        delta_ns += 1000000000;
+        delta_s -= 1;
+    }
+
+    const uint64_t delta_hours = (delta_s / 3600);
+    const uint64_t delta_minutes = (delta_s % 3600) / 60;
+    const uint64_t delta_seconds = delta_s % 60;
+    const uint64_t delta_milliseconds = (delta_ns / 1000000);
+
     if (best != 0) {
-        printf("%lu/%lu Nos foram necessarios. Isso e %.5lf%% do total\n", best, n_nodes, 100. * ((double) best / (double) n_nodes)); return;
+        printf("%llu/%llu Nos foram necessarios. Isso e %.5lf%% do total\n", best, n_nodes, 100. * ((double) best / (double) n_nodes));
+
+        printf("A execucao demorou %llu horas %llu minutos %llu segundos e %llu milisegundos", delta_hours, delta_minutes, delta_seconds, delta_milliseconds);
+        return;
+
 
     }
 
@@ -192,18 +210,19 @@ void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uin
 // Função que utiliza de uma heuristica para encontrar uma solução e, em seguida
 // Utiliza uma função de busca local para tentar encontrar um vizinho melhor
 // Que a solução previamente calculada pela heuristica.
-void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, uint64_t), uint64_t localSearchFunction(const Graph* graph, uint64_t nActiveNodes)) {
+void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, uint64_t*, uint64_t), uint64_t localSearchFunction(const Graph*, uint64_t*, uint64_t)) {
     // Tentando encontrar uma solução inicial com a heuristica
     uint64_t low = 1;
     const uint64_t n_nodes = graph->n_nodes;
     uint64_t high = n_nodes;
     uint64_t best = 0;
+    uint64_t *bestSolution = malloc(sizeof(uint64_t) * n_nodes);
 
     while (low <= high) {
         const uint64_t mid = (low + high) / 2;
         deactivateAll(graph);
 
-        if (heuristicFunction(graph, mid)) {
+        if (heuristicFunction(graph, bestSolution, mid)) {
             best = mid;
             high = mid - 1;
         }
@@ -214,11 +233,21 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
 
     if (best == 0) {
         printf("A heuristica não encontrou solução, portanto não há como fazer a busca local");
+        free(bestSolution);
         return;
     }
 
-    printBits(graph->n_nodes, graph->active_nodes);
-    const uint64_t bestLocal = localSearchFunction(graph, best);
+    const uint64_t bestLocal = localSearchFunction(graph, bestSolution, best);
+
+    deactivateAll(graph);
+    activateFromIDArray(graph, bestSolution, bestLocal);
+
+    do {} while (propagate(graph));
+
+    if (countActiveNodes(graph) != graph->n_nodes) {
+        printf("A solução da busca local não é válida!");
+        return;
+    }
 
     if (best != bestLocal)
     {
@@ -226,10 +255,16 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
         printf("Heuristica: %lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
         printf("Busca Local: %lu Nos ativos (%0.2f%% do total)\n", bestLocal, 100 * (float) bestLocal / graph->n_nodes);
         printf("Diferenca de %0.2f%% de redução\n", ((float) (best - bestLocal) / best) * 100);
+        printf("Solucao: \n");
+        for (int i = 0; i < bestLocal; i++) {
+            printf("%llu, ", bestSolution[i]);
+        }
+        printf("\n");
         printf("--------------------------------------------------\n");
+        free(bestSolution);
         return;
     }
-
+    free(bestSolution);
     printf("A busca local não conseguiu melhorar o resultado da heuristica\n");
     printf("%lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
 }

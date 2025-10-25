@@ -2,13 +2,12 @@
 #include <time.h>
 
 #include "Algorithms.h"
-#include "Heuristics/MaximumDegreeHeuristic.h"
 #include "Solutions.h"
 #include "Graph.h"
 
 
 int main(const int argc, char** argv) {
-    const char *filename = "../graphs/grafo_teste.txt";
+    const char *filename = "../graphs/facebook_combined.txt";
 
     srand(time(NULL));
 
@@ -16,8 +15,9 @@ int main(const int argc, char** argv) {
          filename = argv[1];
     }
     Graph* graph = createGraphFromFilename(filename);
-    testLocalSearch(graph, maximumDegreeHeuristic, hillClimbSimple);
 
+    testLocalSearch(graph, bridgeHeuristic, hillClimbSimple);
+    // testHeuristics(graph, bridgeHeuristic);
     freeGraph(graph);
     return 0;
 }

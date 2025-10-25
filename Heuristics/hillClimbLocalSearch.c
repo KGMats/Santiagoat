@@ -13,14 +13,10 @@
 
 
 // Função de busca local utilizando a estratégia "tira dois, põe um"
-uint64_t hillClimbSimple(const Graph* graph, uint64_t nActiveNodes) {
-    const int MAX_ITERATIONS = 100000;
-
+uint64_t hillClimbSimple(const Graph *graph, uint64_t *bestSolution, uint64_t nActiveNodes) {
+    const uint64_t MAX_ITERATIONS = 1000;
     uint64_t *toRemove = malloc(sizeof(uint64_t) * 2);
     uint64_t *toActivate = malloc(sizeof(uint64_t) * 1);
-    uint64_t melhorAtivos = nActiveNodes;
-
-    uint64_t *activeList = malloc(sizeof(uint64_t) * graph->n_nodes);
     uint64_t *inactiveList = malloc(sizeof(uint64_t) * graph->n_nodes);
 
 
@@ -28,85 +24,70 @@ uint64_t hillClimbSimple(const Graph* graph, uint64_t nActiveNodes) {
 
     while (melhorou) {
         melhorou = false;
-        uint64_t active_index = 0;
-        uint64_t inactive_index = 0;
+        // const uint64_t MAX_ITERATIONS = (graph->n_nodes - nActiveNodes + 2) * nActiveNodes * (nActiveNodes - 1) / 2;
 
-
-
-
-
-        for (uint64_t i = 0; i < graph->n_nodes; i++) {
-            bool state = getNodeState(graph->active_nodes, i);
-            if (state) {
-                activeList[active_index++] = i;
-                continue;
-            }
-            inactiveList[inactive_index++] = i;
-        }
-
-        if (active_index < 2 || nActiveNodes <= 1) {
-            // Nao tem como "Tirar dois e colocar um" se nao tiverem pelo menos dois ativos.
+        if (nActiveNodes < 2) {
+            // Nao tem como "Tirar dois e colocar um" se não tiverem pelo menos dois ativos.
             break;
         }
-        
 
-        if (activeList == NULL || inactiveList == NULL) {
+        printf("Solução atual: %llu nós \n", nActiveNodes);
+
+        if (inactiveList == NULL) {
             perror("Erro na alocacao de memoria nas listas do Hill Climb");
             exit(EXIT_FAILURE);
         }
 
-
         for (int i = 0; i < MAX_ITERATIONS; ++i) {
-            toRemove[0] = activeList[rand() % active_index];
+            uint64_t active_index = nActiveNodes;
+            uint64_t inactive_index = 0;
+
+            toRemove[0] = bestSolution[rand() % nActiveNodes];
             do {
-                toRemove[1] = activeList[rand() % active_index];
+                toRemove[1] = bestSolution[rand() % nActiveNodes];
             } while (toRemove[1] == toRemove[0]);
 
+            removeIDFromList(bestSolution, toRemove[0], &active_index);
+            removeIDFromList(bestSolution, toRemove[1], &active_index);
+            deactivateAll(graph);
+            partialPropagate(graph, active_index, bestSolution);
+
+            for (uint64_t j = 0; j < graph->n_nodes; j++) {
+                const bool state = getNodeState(graph->active_nodes, j);
+                if (!state) inactiveList[inactive_index++] = j;
+            }
+
             if (inactive_index != 0) {
-                *toActivate = inactiveList[rand() % active_index];
-            }
-            else {
-                do {
-                    *toActivate = activeList[rand() % active_index];
-                } while (*toActivate == toRemove[1] || *toActivate == toRemove[0]);
-            }
+                *toActivate = inactiveList[rand() % inactive_index];
 
-            printBits(graph->n_nodes, graph->active_nodes);
-            partialReversePropagate(graph, 2, toRemove);
-            printBits(graph->n_nodes, graph->active_nodes);
-            nActiveNodes -= 1;
+                // Testando se é uma solução válida
+                partialPropagate(graph, 1, toActivate);
+                const uint64_t totalAtivos = countActiveNodes(graph);
 
+                if (totalAtivos == graph->n_nodes) {
+                    nActiveNodes -= 1;
+                    bestSolution[active_index] = *toActivate;
+                    melhorou = true;
+                    break;
+                }
 
-            // Testando se é uma solução válida
-
-
-            printBits(graph->n_nodes, graph->active_nodes);
-            const uint64_t newActiveNodes_propagated = partialPropagate(graph, 1, toActivate);
-            printBits(graph->n_nodes, graph->active_nodes);
-            const uint64_t totalAtivos = countActiveNodes(graph);
-
-            printf("%ld de %ld. (Tentando com %ld nos)\n", totalAtivos, graph->n_nodes, nActiveNodes);
-            printf("\n");
-
-            if (totalAtivos == graph->n_nodes) {
-                melhorAtivos = nActiveNodes;
-                printf("MELHOROU\n");
+                // Se não for, restaura os estados anteriores
+                bestSolution[active_index] = toRemove[0];
+                bestSolution[active_index + 1] = toRemove[1];
+                partialReversePropagate(graph, 1, toActivate);
+                partialPropagate(graph, 2, toRemove);
+            } else {
+                nActiveNodes -= 2;
                 melhorou = true;
                 break;
             }
-
-            // Se não for, restaura os estados anteriores
-            partialReversePropagate(graph, 1, toActivate);
-            partialPropagate(graph, 2, toRemove);
-            nActiveNodes += 1;
         }
     }
 
     free(toActivate);
     free(toRemove);
-    free(activeList);
     free(inactiveList);
 
 
-    return melhorAtivos;
+    return nActiveNodes;
 }

@@ -107,3 +107,20 @@ void printBits(size_t size, const char* ptr) {
     }
     printf("\n");
 }
+
+void removeIDFromList(uint64_t *list, const uint64_t ID, uint64_t *size) {
+    uint64_t IDPosition = -1;
+    for (uint64_t i = 0; i < *size; i++) {
+        if (list[i] == ID) {
+            IDPosition = i;
+        }
+    }
+
+    if (IDPosition != -1) {
+        *size -= 1;
+        if (IDPosition != *size) {
+            list[IDPosition] = list[*size];
+            list[*size] = 0;
+        }
+    }
+}

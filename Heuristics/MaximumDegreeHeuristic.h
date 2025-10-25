@@ -10,6 +10,6 @@
 
 #include "../Graph.h"
 
-bool maximumDegreeHeuristic(const Graph *graph, uint64_t initialActiveNodes);
+bool maximumDegreeHeuristic(const Graph *graph, uint64_t *result, uint64_t initialActiveNodes);
 
 #endif //GRAFOS_MAXIMUMDEGREEHEURISTIC_H

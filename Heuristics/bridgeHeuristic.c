@@ -10,8 +10,7 @@
 #include "bridgeHeuristic.h"
 
 // Heuristica das pontes.
-bool bridgeHeuristic(const Graph *graph, const uint64_t initialActiveNodes) {
-    uint64_t *activeNodes = malloc(sizeof(uint64_t) * initialActiveNodes);
+bool bridgeHeuristic(const Graph *graph, uint64_t *result, const uint64_t initialActiveNodes) {
     uint64_t counter = 0;
 
     uint64_t *changedNodes = malloc(sizeof(uint64_t) * graph->n_nodes);
@@ -28,7 +27,7 @@ bool bridgeHeuristic(const Graph *graph, const uint64_t initialActiveNodes) {
 
         if (getNodeState(graph->active_nodes, nodeID)) continue;
 
-        activeNodes[counter++] = nodeID;
+        result[counter++] = nodeID;
         changedNodes[n_changed++] = nodeID;
     }
 
@@ -40,7 +39,7 @@ bool bridgeHeuristic(const Graph *graph, const uint64_t initialActiveNodes) {
 
         if (getNodeState(graph->active_nodes, nodeID)) continue;
 
-        activeNodes[counter++] = nodeID;
+        result[counter++] = nodeID;
         changedNodes[n_changed++] = nodeID;
 
     }
@@ -49,5 +48,5 @@ bool bridgeHeuristic(const Graph *graph, const uint64_t initialActiveNodes) {
     free(list);
     free(tarjanSolutions);
 
-    return runTest(graph, activeNodes, initialActiveNodes);
+    return runTest(graph, result, initialActiveNodes);
 }

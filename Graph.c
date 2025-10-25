@@ -115,10 +115,10 @@ Graph *createGraphFromFilename(const char *filename) {
 
 // Função de set em um array de bits. Utilizando bits ao invez de um array de bools
 // economizamos por volta de 87% de memória.
-void setNodeState(char *activeNodesArray, uint64_t id, const int newState) {
-    uint64_t i = id / 8;
-    uint64_t j = id % 8;
-    char mask = 0b10000000 >> j ;
+void setNodeState(char *activeNodesArray, const uint64_t id, const int newState) {
+    const uint64_t i = id / 8;
+    const uint64_t j = id % 8;
+    const char mask = (char) (0b10000000 >> j);
 
     if (newState == 1) {
         activeNodesArray[i] = activeNodesArray[i] | mask;
@@ -131,10 +131,10 @@ void setNodeState(char *activeNodesArray, uint64_t id, const int newState) {
 
 
 // Função que retorna o valor de um bit em um array de bits.
-bool getNodeState(const char* activeNodesArray, uint64_t id) {
-    uint64_t i = id / 8;
-    uint64_t j = id % 8;
-    const char mask = 0b10000000 >> j ;
+bool getNodeState(const char* activeNodesArray, const uint64_t id) {
+    const uint64_t i = id / 8;
+    const uint64_t j = id % 8;
+    const char mask = (char) (0b10000000 >> j);
 
     return (activeNodesArray[i] & mask) != 0;
 }
@@ -145,8 +145,12 @@ bool getNodeState(const char* activeNodesArray, uint64_t id) {
 void activateFromFile(const Graph *graph, const char *filename) {
     FILE *file = fopen(filename, "r");
     uint64_t id;
-    while (1 == fscanf(file, "%lu", &id)) {
+    while (1 == fscanf(file, "%llu", &id)) {
         setNodeState(graph->active_nodes, id, 1);
+        const Node* node = graph->nodes[id];
+        for (uint64_t i = 0; i < node->n_neighbors; i++) {
+            node->neighbors[i]->n_active_neighbors++;
+        }
     }
     fclose(file);
 }
@@ -156,7 +160,7 @@ void activateFromFile(const Graph *graph, const char *filename) {
 void activateFromIDArray(const Graph *graph, const uint64_t *IDs, const uint64_t n_ids) {
     for (uint64_t i = 0; i < n_ids; i++) {
         setNodeState(graph->active_nodes, IDs[i], 1);
-        Node *node = graph->nodes[IDs[i]];
+        const Node *node = graph->nodes[IDs[i]];
         for (uint64_t j = 0; j < node->n_neighbors; j++) {
             node->neighbors[j]->n_active_neighbors++;
         }
