@@ -219,3 +219,13 @@ void saveSolution(Graph *graph, const char* filename) {
         }
     }
 }
+
+uint64_t countActiveNodes(const Graph* graph) {
+    uint64_t count = 0;
+    for (uint64_t i = 0; i < graph->n_nodes; i++) {
+        if (getNodeState(graph->active_nodes, i)) { //
+            count++;
+        }
+    }
+    return count;
+}

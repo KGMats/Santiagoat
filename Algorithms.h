@@ -6,6 +6,7 @@
 #include "Graph.h"
 
 int propagate(const Graph *graph);
+
 uint64_t partialPropagate(const Graph *graph, uint64_t n_changed, const uint64_t *changed_nodes);
 uint64_t partialReversePropagate(const Graph *graph, uint64_t n_changed, const uint64_t *changed_nodes);
 bool runTest(const Graph *graph, const uint64_t *activeNodeIDs, uint64_t n_ids);

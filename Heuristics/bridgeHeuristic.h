@@ -10,6 +10,6 @@
 
 #include "../Graph.h"
 
-bool bridgeHeuristic(Graph *graph, uint64_t initialActiveNodes);
+bool bridgeHeuristic(const Graph *graph, uint64_t initialActiveNodes);
 
 #endif //GRAFOS_BRIDGEHEURISTIC_H

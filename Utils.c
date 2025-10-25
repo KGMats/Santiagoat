@@ -7,9 +7,6 @@
 
 #include "Utils.h"
 
-// TODO: Implementar printBits
-
-
 
 tuple *orderedList(const Graph *graph) {
     tuple *list = malloc(sizeof(tuple) * graph->n_nodes);
@@ -97,4 +94,16 @@ void mergeSort(tuple *arr, const uint64_t left, const uint64_t right) {
 
         merge(arr, left, mid, right);
     }
+}
+
+void printBits(size_t size, const char* ptr) {
+    for (uint64_t i = 0; i < size; i++) {
+        printf("%c", getNodeState(ptr, i ) ? '1' : '0');
+
+        // Adicionando um espaco a cada 8 bits para tornar mais legivel
+        if ((i + 1) % 8 == 0 && (i + 1) < size) {
+            printf(" ");
+        }
+    }
+    printf("\n");
 }

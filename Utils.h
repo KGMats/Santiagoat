@@ -17,6 +17,6 @@ typedef struct {
 tuple *orderedList(const Graph *graph);
 tuple *orderedSetList(const Graph *graph, const uint64_t *IDsList);
 void mergeSort(tuple *arr, uint64_t left, uint64_t right);
-void printBits(size_t size, void const * ptr);
+void printBits(size_t size, const char* ptr);
 
 #endif //GRAFOS_UTILS_H

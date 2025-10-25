@@ -1,9 +1,14 @@
-cmake_minimum_required(VERSION 4.0)
-project(Grafos C)
+cmake_minimum_required(VERSION 3.30)
+project(SemNome C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(Grafos main.c
+
+include_directories(${CMAKE_SOURCE_DIR})
+include_directories("${CMAKE_SOURCE_DIR}/Heuristics")
+include_directories("${CMAKE_SOURCE_DIR}/Meta-Heuristics")
+
+add_executable(SemNome main.c
         Graph.c
         Graph.h
         Algorithms.c
@@ -22,4 +27,7 @@ add_executable(Grafos main.c
         Heuristics/bridgeHeuristic.h
         Heuristics/hillClimbLocalSearch.c
         Heuristics/hillClimbLocalSearch.h
+        Heuristics/hillClimbLocalSearch.c
+        Meta-Heuristics/grasp.c
+        Meta-Heuristics/grasp.h
 )

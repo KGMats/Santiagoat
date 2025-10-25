@@ -13,7 +13,8 @@ bool maximumDegreeHeuristic(const Graph *graph, const uint64_t initialActiveNode
     uint64_t *activeNodes = malloc(sizeof(uint64_t) * initialActiveNodes);
 
     for (int i = 0; i < initialActiveNodes; i++) {
-        activeNodes[i] = list[graph->n_nodes - i - 1].ID;
+        // activeNodes[i] = list[graph->n_nodes - i - 1].ID;
+        activeNodes[i] = list[i].ID;
     }
 
     free(list);

@@ -10,7 +10,7 @@
 #include "bridgeHeuristic.h"
 
 // Heuristica das pontes.
-bool greedyHeuristics02(Graph *graph, const uint64_t initialActiveNodes) {
+bool bridgeHeuristic(const Graph *graph, const uint64_t initialActiveNodes) {
     uint64_t *activeNodes = malloc(sizeof(uint64_t) * initialActiveNodes);
     uint64_t counter = 0;
 

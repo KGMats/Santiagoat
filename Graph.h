@@ -42,5 +42,5 @@ void activateFromIDArray(const Graph *graph, const uint64_t *IDs, uint64_t n_ids
 void deactivateAll(const Graph *graph);
 void freeGraph(Graph *graph);
 void saveGraphToFile(Graph *graph, const char* filename);
-
+uint64_t countActiveNodes(const Graph* graph);
 #endif //SEMNOME_GRAPH_H

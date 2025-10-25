@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <time.h>
+
 #include "Algorithms.h"
 #include "Heuristics/MaximumDegreeHeuristic.h"
 #include "Solutions.h"
@@ -5,7 +8,9 @@
 
 
 int main(const int argc, char** argv) {
-    const char *filename = "../graphs/facebook_combined.txt";
+    const char *filename = "../graphs/grafo_teste.txt";
+
+    srand(time(NULL));
 
     if (argc > 1) {
          filename = argv[1];

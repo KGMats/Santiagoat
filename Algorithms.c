@@ -6,6 +6,8 @@
 #include "Stack.h"
 #include "Algorithms.h"
 
+#include "Utils.h"
+
 
 // Funcao utilizada para verificar se o número de vizinhos ativos
 // é suficiente para ativar o nó passado como argumento
@@ -83,6 +85,7 @@ uint64_t partialPropagate(const Graph *graph, const uint64_t n_changed, const ui
 
     for (uint64_t i = 0; i < n_changed; i++) {
         queue[back++] = changed_nodes[i];
+        setNodeState(graph->active_nodes, changed_nodes[i], 1);
         setNodeState(inQueue, changed_nodes[i], 1);
     }
 
@@ -127,6 +130,7 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
 
     for (uint64_t i = 0; i < n_changed; i++) {
         queue[back++] = changed_nodes[i];
+        setNodeState(graph->active_nodes, changed_nodes[i], 0);
     }
 
     uint64_t new_count = 0;
@@ -213,6 +217,7 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
         return;
     }
 
+    printBits(graph->n_nodes, graph->active_nodes);
     const uint64_t bestLocal = localSearchFunction(graph, best);
 
     if (best != bestLocal)
@@ -225,6 +230,6 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
         return;
     }
 
-    printf("A busca local não conseguiu melhorar o resultado da heuristica");
-
+    printf("A busca local não conseguiu melhorar o resultado da heuristica\n");
+    printf("%lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
 }
