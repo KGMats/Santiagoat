@@ -6,6 +6,7 @@
 #include "Stack.h"
 #include "Algorithms.h"
 
+#include <time.h>
 #include <sys/types.h>
 
 #include "Utils.h"
@@ -218,7 +219,7 @@ void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uin
     uint64_t *bestSolution = malloc(sizeof(uint64_t) * n_nodes);
 
     struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    timespec_get(&start, TIME_UTC);
 
     while (low <= high) {
         const uint64_t mid = (low + high) / 2;
@@ -235,6 +236,8 @@ void testHeuristics(const Graph* graph, bool heuristicFunction(const Graph*, uin
 
 
     nanosleep((const struct timespec[]){{120, 500000000L}}, NULL);
+
+    timespec_get(&end, TIME_UTC);
 
     int64_t delta_ns = end.tv_nsec - start.tv_nsec;
     int64_t delta_s = end.tv_sec - start.tv_sec;
@@ -273,6 +276,9 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
     uint64_t best = 0;
     uint64_t *bestSolution = malloc(sizeof(uint64_t) * n_nodes);
 
+    struct timespec start, end;
+    timespec_get(&start, TIME_UTC);
+
     while (low <= high) {
         const uint64_t mid = (low + high) / 2;
         deactivateAll(graph);
@@ -304,8 +310,22 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
         return;
     }
 
+    timespec_get(&end, TIME_UTC);
     if (best != bestLocal)
     {
+        int64_t delta_ns = end.tv_nsec - start.tv_nsec;
+        int64_t delta_s = end.tv_sec - start.tv_sec;
+
+        if (delta_ns < 0) {
+            delta_ns += 1000000000;
+            delta_s -= 1;
+        }
+
+        const uint64_t delta_hours = (delta_s / 3600);
+        const uint64_t delta_minutes = (delta_s % 3600) / 60;
+        const uint64_t delta_seconds = delta_s % 60;
+        const uint64_t delta_milliseconds = (delta_ns / 1000000);
+
         printf("--------------------------------------------------\n");
         printf("Heuristica: %lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
         printf("Busca Local: %lu Nos ativos (%0.2f%% do total)\n", bestLocal, 100 * (float) bestLocal / graph->n_nodes);
@@ -315,6 +335,8 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
             printf("%llu, ", bestSolution[i]);
         }
         printf("\n");
+        printf("A execucao demorou %llu horas %llu minutos %llu segundos e %llu milisegundos", delta_hours, delta_minutes, delta_seconds, delta_milliseconds);
+
         printf("--------------------------------------------------\n");
         free(bestSolution);
         return;
