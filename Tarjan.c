@@ -44,7 +44,7 @@ uint64_t* tarjan(const Graph* graph) {
             Node* start_node = graph->nodes[i];
 
             // Inicia o DFS iterativo
-            dfs_AP(start_node, visited, disc, low, parent, isAP, graph, &time);
+            dfs_AP(start_node, visited, disc, low, parent, isAP, &time);
 
             // A REGRA DA RAIZ precisa ser verificada aqui, após o término do DFS
             // para um componente. Contamos quantos filhos a raiz teve.
@@ -75,11 +75,11 @@ uint64_t* tarjan(const Graph* graph) {
 }
 
 // Função auxiliar de dfs utilizada pelo Algoritmo de Tarjan
-void dfs_AP(Node* startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], const Graph* graph, uint64_t* time) {
+void dfs_AP(Node *startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], uint64_t *time) {
     LinkedList* stack = NULL;
 
     // Cria e empilha o primeiro estado para o nó inicial
-    StackFrame* start_frame = (StackFrame*)malloc(sizeof(StackFrame));
+    StackFrame* start_frame = malloc(sizeof(StackFrame));
     start_frame->u = startNode;
     start_frame->neighbor_idx = 0;
     StackPush(&stack, start_frame);
@@ -116,7 +116,7 @@ void dfs_AP(Node* startNode, bool visited[], uint64_t disc[], uint64_t low[], ui
                 // Se não foi visitado, definimos o pai e empilhamos um novo estado para 'v'
                 parent[v_id] = u_id;
 
-                StackFrame* new_frame = (StackFrame*)malloc(sizeof(StackFrame));
+                StackFrame* new_frame = malloc(sizeof(StackFrame));
                 new_frame->u = v;
                 new_frame->neighbor_idx = 0;
                 StackPush(&stack, new_frame);

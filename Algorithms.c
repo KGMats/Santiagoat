@@ -19,7 +19,9 @@ bool activationFunction(const Node *node)
     {
         return false;
     }
-    return node->n_active_neighbors / node->n_neighbors >= 0.5;
+    const long double n_active_neighbors = (long double) node->n_active_neighbors;
+    const long double n_neighbors = (long double) node->n_neighbors;
+    return (n_active_neighbors / n_neighbors) >= 0.5;
 }
 
 
@@ -54,9 +56,7 @@ int propagate(const Graph* graph) {
 // Função que verifica se um dado conjunto de nós (activeNodeIDs)
 // é capaz de ativar inteiramente o grafo
 bool runTest(const Graph* graph, const uint64_t *activeNodeIDs, const uint64_t n_ids) {
-    activateFromIDArray(graph, activeNodeIDs, n_ids);
-
-    do {} while (propagate(graph));
+    partialPropagate(graph, n_ids, activeNodeIDs);
 
     uint64_t counter = countActiveNodes(graph);
 
@@ -137,6 +137,7 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
             Node *neighbor = node->neighbors[i];
 
             neighbor->n_active_neighbors--;
+
             if (!getNodeState(graph->active_nodes, neighbor->ID)) continue;
 
 
@@ -145,6 +146,60 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
                 queue[back++] = neighbor->ID;
 
                 new_count++;
+            }
+        }
+    }
+
+    free(queue);
+    return new_count;
+}
+
+
+
+// TODO: Fazer essa função funcionar
+uint64_t partialReversePropagateBlackListed(const Graph *graph, const uint64_t n_changed, const uint64_t *changed_nodes, const uint64_t *black_list, const uint64_t black_list_size) {
+    if (n_changed == 0) return 0;
+
+    uint64_t *queue = malloc(sizeof(uint64_t) * graph->n_nodes);
+    uint64_t front = 0;
+    uint64_t back = 0;
+
+    for (uint64_t i = 0; i < n_changed; i++) {
+        queue[back++] = changed_nodes[i];
+        setNodeState(graph->active_nodes, changed_nodes[i], 0);
+    }
+
+    uint64_t new_count = 0;
+
+    while (front < back) {
+        const uint64_t nodeID = queue[front++];
+        const Node *node = graph->nodes[nodeID];
+
+        for (uint64_t i = 0; i < node->n_neighbors; i++) {
+            Node *neighbor = node->neighbors[i];
+
+            neighbor->n_active_neighbors--;
+
+            bool isBlacklisted = false;
+
+            for (uint64_t j = 0; j < black_list_size; j++) {
+                if (neighbor->ID == black_list[j]) {
+                    isBlacklisted = true;
+                    break;
+                }
+            }
+
+            if (!isBlacklisted) {
+
+                if (!getNodeState(graph->active_nodes, neighbor->ID)) continue;
+
+                if (!activationFunction(neighbor)) {
+                    setNodeState(graph->active_nodes, neighbor->ID, 0);
+                    queue[back++] = neighbor->ID;
+
+                    new_count++;
+                }
+
             }
         }
     }

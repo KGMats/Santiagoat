@@ -16,7 +16,7 @@ int main(const int argc, char** argv) {
     }
     Graph* graph = createGraphFromFilename(filename);
 
-    testLocalSearch(graph, bridgeHeuristic, hillClimbSimple);
+    testLocalSearch(graph, maximumDegreeHeuristic, hillClimbSimple);
     // testHeuristics(graph, bridgeHeuristic);
     freeGraph(graph);
     return 0;

@@ -11,7 +11,7 @@
 #include "Graph.h"
 
 uint64_t* tarjan(const Graph* graph);
-void dfs_AP(Node* startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], const Graph* graph, uint64_t* time);
+void dfs_AP(Node *startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], uint64_t *time);
 
 
 #endif //GRAFOS_TARJAN_H
