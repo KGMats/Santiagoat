@@ -78,9 +78,11 @@ uint64_t partialPropagate(const Graph *graph, const uint64_t n_changed, const ui
     uint64_t back = 0;
 
     for (uint64_t i = 0; i < n_changed; i++) {
-        queue[back++] = changed_nodes[i];
-        setNodeState(graph->active_nodes, changed_nodes[i], 1);
-        setNodeState(inQueue, changed_nodes[i], 1);
+        if (!getNodeState(inQueue, changed_nodes[i])) {
+            queue[back++] = changed_nodes[i];
+            setNodeState(graph->active_nodes, changed_nodes[i], 1);
+            setNodeState(inQueue, changed_nodes[i], 1);
+        }
     }
 
     uint64_t new_count = 0;
@@ -120,40 +122,44 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
     if (n_changed == 0) return 0;
 
     uint64_t *queue = malloc(sizeof(uint64_t) * graph->n_nodes);
+
+    char *inQueue = calloc((graph->n_nodes / 8) + 1, sizeof(char));
+
     uint64_t front = 0;
     uint64_t back = 0;
 
     for (uint64_t i = 0; i < n_changed; i++) {
         queue[back++] = changed_nodes[i];
         setNodeState(graph->active_nodes, changed_nodes[i], 0);
+        setNodeState(inQueue, changed_nodes[i], 1);
     }
 
     uint64_t new_count = 0;
-
     while (front < back) {
         const uint64_t nodeID = queue[front++];
         const Node *node = graph->nodes[nodeID];
 
         for (uint64_t i = 0; i < node->n_neighbors; i++) {
             Node *neighbor = node->neighbors[i];
-
             neighbor->n_active_neighbors--;
 
             if (!getNodeState(graph->active_nodes, neighbor->ID)) continue;
 
-
             if (!activationFunction(neighbor)) {
                 setNodeState(graph->active_nodes, neighbor->ID, 0);
-                queue[back++] = neighbor->ID;
-
+                if (!getNodeState(inQueue, neighbor->ID)) {
+                    queue[back++] = neighbor->ID;
+                    setNodeState(inQueue, neighbor->ID, 1);
+                }
                 new_count++;
             }
         }
     }
-
+    free(inQueue);
     free(queue);
     return new_count;
 }
+
 
 
 
@@ -346,3 +352,4 @@ void testLocalSearch(const Graph *graph, bool heuristicFunction(const Graph*, ui
     printf("A busca local não conseguiu melhorar o resultado da heuristica\n");
     printf("%lu Nos ativos (%0.2f%% do total)\n", best, 100 *(float) best / graph->n_nodes);
 }
+
