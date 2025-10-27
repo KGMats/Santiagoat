@@ -161,8 +161,6 @@ uint64_t partialReversePropagate(const Graph *graph, const uint64_t n_changed, c
 }
 
 
-
-
 // TODO: Fazer essa função funcionar
 uint64_t partialReversePropagateBlackListed(const Graph *graph, const uint64_t n_changed, const uint64_t *changed_nodes, const uint64_t *black_list, const uint64_t black_list_size) {
     if (n_changed == 0) return 0;
