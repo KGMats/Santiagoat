@@ -4,12 +4,14 @@
 
 #include "Graph.h"
 
-#include "Heuristics/MaximumDegreeHeuristic.h"
-#include "Heuristics/bridgeHeuristic.h"
-#include "Heuristics/hillClimbLocalSearch.h"
+// Heuristicas
+#include "MaximumDegreeHeuristic.h"
+#include "bridgeHeuristic.h"
+#include "hillClimbLocalSearch.h"
+#include "fullRandomHeuristic.h"
 
-
-
+// Meta-Heuristicas
+#include "grasp.h"
 
 
 #endif //SEMNOME_SOLUTIONS_H

@@ -30,4 +30,6 @@ add_executable(SemNome main.c
         Heuristics/hillClimbLocalSearch.c
         Meta-Heuristics/grasp.c
         Meta-Heuristics/grasp.h
+        Heuristics/fullRandomHeuristic.c
+        Heuristics/fullRandomHeuristic.h
 )
