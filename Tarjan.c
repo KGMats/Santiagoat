@@ -20,11 +20,11 @@ uint64_t* tarjan(const Graph* graph) {
     const uint64_t n_nodes = graph->n_nodes;
 
     // TODO: usar bitsets no isAP e no visited ao invés de arrays de bool.
-    bool* visited = calloc(n_nodes, sizeof(bool));
     uint64_t* disc = malloc(n_nodes * sizeof(uint64_t));
     uint64_t* low = malloc(n_nodes * sizeof(uint64_t));
     uint64_t* parent = malloc(n_nodes * sizeof(uint64_t));
-    bool* isAP = calloc(n_nodes, sizeof(bool));
+    char* visited = malloc((n_nodes / 8) + 1);
+    char* isAP = malloc((n_nodes / 8) + 1);
     uint64_t* solutions = malloc(n_nodes * sizeof(uint64_t));
     uint64_t n_solutions = 0;
     uint64_t time = 0;
@@ -40,7 +40,7 @@ uint64_t* tarjan(const Graph* graph) {
     }
 
     for (uint64_t i = 0; i < n_nodes; i++) {
-        if (!visited[i]) {
+        if (!getNodeState(visited, i)) {
             Node* start_node = graph->nodes[i];
 
             // Inicia o DFS iterativo
@@ -55,13 +55,13 @@ uint64_t* tarjan(const Graph* graph) {
                 }
             }
             if (root_children > 1) {
-                isAP[start_node->ID] = true;
+                setNodeState(isAP, start_node->ID, 1);
             }
         }
     }
 
     for (uint64_t i = 0; i < n_nodes; i++) {
-        if (isAP[i]) {
+        if (getNodeState(isAP, i)) {
             solutions[n_solutions++] = i;
         }
     }
@@ -75,7 +75,7 @@ uint64_t* tarjan(const Graph* graph) {
 }
 
 // Função auxiliar de dfs utilizada pelo Algoritmo de Tarjan
-void dfs_AP(Node *startNode, bool visited[], uint64_t disc[], uint64_t low[], uint64_t parent[], bool isAP[], uint64_t *time) {
+void dfs_AP(Node *startNode, char *visited, uint64_t disc[], uint64_t low[], uint64_t parent[], char *isAP, uint64_t *time) {
     LinkedList* stack = NULL;
 
     // Cria e empilha o primeiro estado para o nó inicial
@@ -91,8 +91,8 @@ void dfs_AP(Node *startNode, bool visited[], uint64_t disc[], uint64_t low[], ui
         const uint64_t u_id = u->ID;
 
         // Se é a primeira vez que processamos este nó, fazemos as ações de "pré-ordem"
-        if (!visited[u_id]) {
-            visited[u_id] = true;
+        if (!getNodeState(visited, u_id)) {
+            setNodeState(visited, u_id, 1);
             disc[u_id] = low[u_id] = ++(*time);
         }
 
@@ -109,7 +109,7 @@ void dfs_AP(Node *startNode, bool visited[], uint64_t disc[], uint64_t low[], ui
                 continue;
             }
 
-            if (visited[v_id]) {
+            if (getNodeState(visited, v_id)) {
                 // Se o vizinho já foi visitado, é um atalho (back-edge)
                 low[u_id] = min(low[u_id], disc[v_id]);
             } else {
@@ -131,7 +131,7 @@ void dfs_AP(Node *startNode, bool visited[], uint64_t disc[], uint64_t low[], ui
 
                 // E o pai verifica se é um ponto de articulação devido a 'u'
                 if (low[u_id] >= disc[p_id]) {
-                    isAP[p_id] = true;
+                    setNodeState(isAP, p_id, 1);
                 }
             }
 
