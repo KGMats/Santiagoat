@@ -1,15 +1,24 @@
+#include <stdio.h>
+#include <time.h>
+
+#include "Algorithms.h"
+#include "fullRandomHeuristic.h"
 #include "Solutions.h"
 #include "Graph.h"
 
 
-int main(int argc, char** argv) {
-    const char *filename = "../graphs/soc-LiveJournal1.txt";
+int main(const int argc, char** argv) {
+    const char *filename = "../graphs/facebook_combined.txt";
 
     if (argc > 1) {
          filename = argv[1];
     }
     Graph* graph = createGraphFromFilename(filename);
-    testHeuristics(graph, greedyHeuristics01);
+
+    // testLocalSearch(graph, bridgeHeuristic, hillClimbSimple);
+    // testHeuristics(graph, bridgeHeuristic);
+    int sol = GRASP(graph, 10, time(NULL), fullRandomHeuristic, hillClimbSimple);
+    printf("%d\n", sol);
 
     freeGraph(graph);
     return 0;
